@@ -126,10 +126,13 @@ m/44'/<coin type>'/<account>'/<branch>/<address index>
 
 - **Transaction Building & Signing:**  
   When you initiate a transaction:
-  1. The wallet selects the appropriate UTXOs based on coin selection algorithms.
+  1. The **wallet selects** the appropriate UTXOs based on coin selection algorithms.
   2. It constructs a raw transaction specifying inputs (UTXOs) and outputs (destination addresses and change).
   3. The wallet then signs the transaction using the corresponding private keys.
   4. The signed transaction is broadcast to the Bitcoin network.
+
+  **Note:**  
+  It is also possible to manually select specific UTXOs for spending. However, this functionality is not built into the wallet’s high-level API. To achieve manual UTXO selection, you must build and sign a raw transaction using RPC calls such as `listunspent`, `createrawtransaction`, and `sendrawtransaction`—interacting directly with the blockchain rather than relying on the wallet's automatic coin selection.
 
 ### External vs. Internal (Change) Addresses
 

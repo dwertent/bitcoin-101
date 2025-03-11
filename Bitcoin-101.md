@@ -155,7 +155,7 @@ m/44'/<coin type>'/<account>'/<branch>/<address index>
 
 - **Unlocking Process:**  
   To spend the UTXO, the owner must supply:
-  - Their public key (which, when hashed, must match the stored <pubKeyHash>).
+  - Their public key (which, when hashed, must match the stored `pubKeyHash`).
   - A digital signature (generated using the private key) that proves ownership.
 
 ### Creating a Digital Signature
@@ -163,7 +163,7 @@ m/44'/<coin type>'/<account>'/<branch>/<address index>
 - **How It Works:**  
   Using ECDSA, the private key is used to sign the transaction data (or its hash). The resulting signature (a pair of numbers) is included in the unlocking script.
 - **Verification:**  
-  Nodes use the provided public key to hash it and compare it to the <pubKeyHash>, and then check the signature’s validity against the transaction data. This ensures only the owner (with the correct private key) can spend the funds.
+  Nodes use the provided public key to hash it and compare it to the `pubKeyHash`, and then check the signature’s validity against the transaction data. This ensures only the owner (with the correct private key) can spend the funds.
 
 ### Simplified Transaction Example
 

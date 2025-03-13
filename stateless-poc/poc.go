@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -33,8 +34,7 @@ const (
 	*/
 
 	// Address that owns the UTXO
-	addressStr = "muCmmr3fwCvbFbdPUgtw6KFyx92qtDyuyx"
-
+	addressStr    = "muCmmr3fwCvbFbdPUgtw6KFyx92qtDyuyx"
 	privateKeyWIF = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 
 	// UTXO details (we use the one with enough funds)
@@ -60,66 +60,50 @@ func connectRPC() (*rpcclient.Client, error) {
 	return rpcclient.New(connCfg, nil)
 }
 
-// Create and sign a transaction manually
-func createAndSignTx() (string, error) {
+func prepareTx() (*wire.MsgTx, error) {
+	tx := wire.NewMsgTx(wire.TxVersion)
+	txHash, err := chainhash.NewHashFromStr(utxoTxID)
+	if err != nil {
+		return nil, err
+	}
+	outPoint := wire.NewOutPoint(txHash, utxoVout)
+	tx.AddTxIn(wire.NewTxIn(outPoint, nil, nil))
+
+	recipientAddr, err := btcutil.DecodeAddress(recipient, &chaincfg.TestNet4Params)
+	if err != nil {
+		return nil, err
+	}
+	pkScript, err := txscript.PayToAddrScript(recipientAddr)
+	if err != nil {
+		return nil, err
+	}
+	tx.AddTxOut(wire.NewTxOut(amountToSend, pkScript))
+
+	change := utxoAmount - (amountToSend + fee)
+	if change > 546 {
+		changeAddr, err := btcutil.DecodeAddress(addressStr, &chaincfg.TestNet4Params)
+		if err != nil {
+			return nil, err
+		}
+		changeScript, err := txscript.PayToAddrScript(changeAddr)
+		if err != nil {
+			return nil, err
+		}
+		tx.AddTxOut(wire.NewTxOut(int64(change), changeScript))
+	}
+
+	m, _ := json.Marshal(tx)
+	fmt.Printf("Prepared Transaction:\n%s\n", m)
+
+	return tx, nil
+}
+
+func signTx(tx *wire.MsgTx) (string, error) {
 	wif, err := btcutil.DecodeWIF(privateKeyWIF)
 	if err != nil {
 		return "", fmt.Errorf("error decoding WIF: %w", err)
 	}
-
-	// Create a new transaction
-	tx := wire.NewMsgTx(wire.TxVersion)
-
-	// Parse tx hash
-	txHash, err := chainhash.NewHashFromStr(utxoTxID)
-	if err != nil {
-		return "", err
-	}
-
-	// Create outpoint
-	outPoint := wire.NewOutPoint(txHash, utxoVout)
-
-	// Create and add input (spending the UTXO)
-	txIn := wire.NewTxIn(outPoint, nil, nil)
-	tx.AddTxIn(txIn)
-
-	// Create recipient output
-	recipientAddr, err := btcutil.DecodeAddress(recipient, &chaincfg.TestNet4Params)
-	if err != nil {
-		return "", err
-	}
-	pkScript, err := txscript.PayToAddrScript(recipientAddr)
-	if err != nil {
-		return "", err
-	}
-	tx.AddTxOut(wire.NewTxOut(amountToSend, pkScript))
-
-	// Add change output (if needed)
-	change := utxoAmount - (amountToSend + fee)
-
-	if change > 546 { // If change is too small, it will be eaten by fees
-		changeAddr, err := btcutil.DecodeAddress(addressStr, &chaincfg.TestNet4Params)
-		if err != nil {
-			return "", err
-		}
-		changeScript, err := txscript.PayToAddrScript(changeAddr)
-		if err != nil {
-			return "", err
-		}
-		tx.AddTxOut(wire.NewTxOut(int64(change), changeScript))
-
-		fmt.Println("Added Change Output:")
-		fmt.Printf("  - Address: %s\n", addressStr)
-		fmt.Printf("  - Change Amount: %d Satoshis\n", change)
-
-	} else {
-		fmt.Println("Change too small, adding it to fee")
-	}
-
-	// Decode scriptPubKey
 	scriptPubKeyBytes, _ := hex.DecodeString(scriptPubKey)
-
-	// Sign the transaction
 	for i, txIn := range tx.TxIn {
 		sigScript, err := txscript.SignatureScript(tx, i, scriptPubKeyBytes, txscript.SigHashAll, wif.PrivKey, true)
 		if err != nil {
@@ -128,17 +112,15 @@ func createAndSignTx() (string, error) {
 		txIn.SignatureScript = sigScript
 	}
 
-	// Serialize and return hex
 	var buf bytes.Buffer
 	if err := tx.Serialize(&buf); err != nil {
 		return "", err
 	}
 	signedTxHex := hex.EncodeToString(buf.Bytes())
-
+	fmt.Println("Signed Transaction Hex:", signedTxHex)
 	return signedTxHex, nil
 }
 
-// Broadcast transaction to Bitcoin network
 func broadcastTx(client *rpcclient.Client, signedTxHex string) error {
 	rawTxBytes, err := hex.DecodeString(signedTxHex)
 	if err != nil {
@@ -146,10 +128,12 @@ func broadcastTx(client *rpcclient.Client, signedTxHex string) error {
 	}
 
 	tx := wire.NewMsgTx(wire.TxVersion)
-	err = tx.Deserialize(bytes.NewReader(rawTxBytes))
-	if err != nil {
+	if err := tx.Deserialize(bytes.NewReader(rawTxBytes)); err != nil {
 		return err
 	}
+
+	jsonTx, _ := json.Marshal(tx)
+	fmt.Printf("Broadcasting Transaction:\n%s\n", jsonTx)
 
 	txHash, err := client.SendRawTransaction(tx, false)
 	if err != nil {
@@ -160,25 +144,25 @@ func broadcastTx(client *rpcclient.Client, signedTxHex string) error {
 }
 
 func main() {
-	// Connect to Bitcoin node
 	client, err := connectRPC()
 	if err != nil {
 		log.Fatalf("Error connecting to Bitcoin RPC: %v", err)
 	}
 	defer client.Shutdown()
 
-	// Create and sign transaction
-	signedTxHex, err := createAndSignTx()
+	tx, err := prepareTx()
 	if err != nil {
-		log.Fatalf("Error creating and signing transaction: %v", err)
+		log.Fatalf("Error preparing transaction: %v", err)
 	}
 
-	// Print the signed transaction (for debugging)
-	fmt.Println("Signed Transaction Hex:", signedTxHex)
-
-	// Broadcast transaction
-	err = broadcastTx(client, signedTxHex)
+	signedTxHex, err := signTx(tx)
 	if err != nil {
+		log.Fatalf("Error signing transaction: %v", err)
+	}
+
+	fmt.Println("Final Signed Transaction:", signedTxHex)
+
+	if err := broadcastTx(client, signedTxHex); err != nil {
 		log.Fatalf("Error broadcasting transaction: %v", err)
 	}
 }

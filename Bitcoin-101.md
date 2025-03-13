@@ -58,6 +58,99 @@ flowchart LR
 
 *Each block contains transactions that spend UTXOs, and blocks are linked by their hashes.*
 
+<details>
+
+<summary>Example of transaction output</summary>
+
+Here is an example output for the `getrawtransaction` API:
+```json
+{
+  "blockhash": "0000000056e608e42f8bd028ccc253aec8b3c447f50e5b1e4a365690b44ab3e9",
+  "blocktime": 1741313724,
+  "confirmations": 664,
+  "hash": "ab9a228797321d42486449895a5689a353eee963006344526e2f0c85fce2bf0a",
+  "hex": "0100000001ecd2f944011869b6052473cbb6a57ba4768bba5cc9f33c19323a9508a4c8106f010000006b483045022100a5d9641a6b3ce35c218a8dfb68fc4ee4c6a66c20a4d7c1df8bba3e9d39271e510220311574490058a66d9ebb4a52cee24cc8ef6b919b16049d70d3341e8ecd392b4301210271773dcdbc302de051607539e6c8aa7f93f2a5e067221436f65250bac488435dffffffff02183a0000000000001976a91496217dc748df395162630a1692fa685b4d66e44188ac22020000000000001976a914c69fbc30551d7fc7b29c1be197c5452ab9a1c48088ac00000000",
+  "in_active_chain": true,
+  "locktime": 0,
+  "size": 226,
+  "time": 1741313724,
+  "txid": "ab9a228797321d42486449895a5689a353eee963006344526e2f0c85fce2bf0a",
+  "version": 1,
+  "vin": [
+    {
+      "scriptSig": {
+        "asm": "3045022100a5d9641a6b3ce35c218a8dfb68fc4ee4c6a66c20a4d7c1df8bba3e9d39271e510220311574490058a66d9ebb4a52cee24cc8ef6b919b16049d70d3341e8ecd392b43[ALL] 0271773dcdbc302de051607539e6c8aa7f93f2a5e067221436f65250bac488435d",
+        "hex": "483045022100a5d9641a6b3ce35c218a8dfb68fc4ee4c6a66c20a4d7c1df8bba3e9d39271e510220311574490058a66d9ebb4a52cee24cc8ef6b919b16049d70d3341e8ecd392b4301210271773dcdbc302de051607539e6c8aa7f93f2a5e067221436f65250bac488435d"
+      },
+      "sequence": 4294967295,
+      "txid": "6f10c8a408953a32193cf3c95cba8b76a47ba5b6cb732405b669180144f9d2ec",
+      "vout": 1
+    }
+  ],
+  "vout": [
+    {
+      "n": 0,
+      "scriptPubKey": {
+        "address": "muCmmr3fwCvbFbdPUgtw6KFyx92qtDyuyx",
+        "asm": "OP_DUP OP_HASH160 96217dc748df395162630a1692fa685b4d66e441 OP_EQUALVERIFY OP_CHECKSIG",
+        "desc": "addr(muCmmr3fwCvbFbdPUgtw6KFyx92qtDyuyx)#axz05dgx",
+        "hex": "76a91496217dc748df395162630a1692fa685b4d66e44188ac",
+        "type": "pubkeyhash"
+      },
+      "value": 0.00014872
+    },
+    {
+      "n": 1,
+      "scriptPubKey": {
+        "address": "mydBSdJF1fDfe34VJJ5v65cAtrm8w6QBW9",
+        "asm": "OP_DUP OP_HASH160 c69fbc30551d7fc7b29c1be197c5452ab9a1c480 OP_EQUALVERIFY OP_CHECKSIG",
+        "desc": "addr(mydBSdJF1fDfe34VJJ5v65cAtrm8w6QBW9)#ytyp59f0",
+        "hex": "76a914c69fbc30551d7fc7b29c1be197c5452ab9a1c48088ac",
+        "type": "pubkeyhash"
+      },
+      "value": 0.00000546
+    }
+  ],
+  "vsize": 226,
+  "weight": 904
+}
+```
+
+</details>
+
+
+<details>
+
+<summary>Example of a block</summary>
+
+Here is an example output for the `getblock` API:
+
+```json
+{
+  "bits": "1d00ffff",
+  "chainwork": "0000000000000000000000000000000000000000000001de2a6447f9a45fcf72",
+  "confirmations": 664,
+  "difficulty": 1,
+  "hash": "0000000056e608e42f8bd028ccc253aec8b3c447f50e5b1e4a365690b44ab3e9",
+  "height": 72937,
+  "mediantime": 1741313723,
+  "merkleroot": "1d502b2472a4279bc9e9961c76ce1903cd6c97e496376d25d699c4f5cdf89704",
+  "nTx": 4732,
+  "nextblockhash": "000000005c8a82f5b0e4b97ecc834e048a53d7352f980436de1b2fb7a53d79d6",
+  "nonce": 1337964812,
+  "previousblockhash": "00000000000000020acc6cb12eb0ef65846b833329e25bf10b7f52975d47caf1",
+  "size": 1433043,
+  "strippedsize": 853199,
+  "time": 1741313724,
+  "tx": ["<list of txIDs>"],
+  "version": 536870912,
+  "versionHex": "20000000",
+  "weight": 3992640
+}
+```
+
+</details>
+
 
 ## Wallet Architecture and Key Management
 

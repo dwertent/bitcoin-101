@@ -103,13 +103,17 @@ func getTransaction(txid string, verbose bool) (map[string]interface{}, error) {
 
 // getRawTransaction retrieves detailed information about a transaction.
 // The "verbose" flag is set to true so that we receive a JSON object with details.
-func getRawTransaction(txid string, verbose bool) (map[string]interface{}, error) {
+func getRawTransaction(txid, blockHash string, verbose bool) (map[string]interface{}, error) {
 	reqBody := RPCRequest{
 		JSONRPC: "1.0",
 		ID:      "getRawTransaction",
 		Method:  "getrawtransaction",
 		Params:  []interface{}{txid, verbose},
 	}
+	if blockHash != "" {
+		reqBody.Params = append(reqBody.Params, blockHash)
+	}
+
 	rpcResp, err := sendRPCRequest(reqBody, nodeURL)
 	if err != nil {
 		return nil, err
@@ -217,6 +221,23 @@ func getAddressesByAccount(accountName string) ([]string, error) {
 	return result, nil
 }
 
+func createWallet(walletName string) error {
+	reqBody := RPCRequest{
+		JSONRPC: "1.0",
+		ID:      "goClientTest",
+		Method:  "createwallet",
+		Params:  []interface{}{walletName},
+	}
+	rpcResp, err := sendRPCRequest(reqBody, walletURL)
+	if err != nil {
+		return err
+	}
+	if rpcResp.Error != nil {
+		return fmt.Errorf("rpc error: %v", rpcResp.Error)
+	}
+	return nil
+}
+
 // sendRPCRequest sends a JSON-RPC request to your wallet node.
 func sendRPCRequest(reqBody RPCRequest, host hostURL) (RPCResponse, error) {
 	reqBytes, err := json.Marshal(reqBody)
@@ -255,23 +276,6 @@ func sendRPCRequest(reqBody RPCRequest, host hostURL) (RPCResponse, error) {
 		return RPCResponse{}, err
 	}
 	return rpcResp, nil
-}
-
-func createWallet(walletName string) error {
-	reqBody := RPCRequest{
-		JSONRPC: "1.0",
-		ID:      "goClientTest",
-		Method:  "createwallet",
-		Params:  []interface{}{walletName},
-	}
-	rpcResp, err := sendRPCRequest(reqBody, walletURL)
-	if err != nil {
-		return err
-	}
-	if rpcResp.Error != nil {
-		return fmt.Errorf("rpc error: %v", rpcResp.Error)
-	}
-	return nil
 }
 
 func main() {
@@ -366,16 +370,25 @@ func main() {
 	case "getrawtx":
 
 		if len(os.Args) < 3 {
-			panic("Usage: go run main.go getrawtx <txid>")
+			panic("Usage: go run main.go getrawtx <txid> [blockhash]")
 		}
 		txid := os.Args[2]
+
+		blockHash := ""
+		if len(os.Args) >= 4 {
+			blockHash = os.Args[3]
+		}
 
 		fmt.Printf("Getting details for transaction %s\n", txid)
 
 		// Example: Get details about a specific transaction.
 		// Replace this txid with one you wish to inspect. Here we use a sample txid.
-		txDetails, err := getRawTransaction(txid, true)
+		txDetails, err := getRawTransaction(txid, blockHash, true)
 		if err != nil {
+			if strings.Contains(err.Error(), "No such mempool transaction") {
+				fmt.Println("Transaction not found in the mempool, run getrawtx with the blockhash to get the transaction details.")
+				os.Exit(1)
+			}
 			panic(err)
 		}
 		b, err := json.Marshal(txDetails)
@@ -405,23 +418,21 @@ func main() {
 		}
 		fmt.Printf("Transaction Details:\n%s\n", b)
 
-		// If the transaction is confirmed, it should have a "blockhash" field.
-		blockHash, ok := txDetails["blockhash"].(string)
-		if !ok || blockHash == "" {
-			fmt.Println("Transaction is not yet confirmed in a block.")
-		} else {
-			// Retrieve block details.
-			blockDetails, err := getBlock(blockHash)
-			if err != nil {
-				panic(err)
-			}
-			blockDetails["tx"] = "<masked>"
-			b, err := json.Marshal(blockDetails)
-			if err != nil {
-				panic(err)
-			}
-			fmt.Printf("Block Details for block %s:\n%s\n", blockHash, b)
+	case "getblock":
+		if len(os.Args) < 3 {
+			panic("Usage: go run main.go getblock <blockhash>")
 		}
+		blockHash := os.Args[2]
+		block, err := getBlock(blockHash)
+		if err != nil {
+			panic(err)
+		}
+		block["tx"] = []string{"<list of txIDs>"}
+		b, err := json.Marshal(block)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("Block Details for block %s:\n%s\n", blockHash, b)
 
 	default:
 		fmt.Println("Invalid command. Please use one of the following:")

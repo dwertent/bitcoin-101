@@ -238,6 +238,74 @@ func createWallet(walletName string) error {
 	return nil
 }
 
+func listUnspent(address string) ([]interface{}, error) {
+	reqBody := RPCRequest{
+		JSONRPC: "1.0",
+		ID:      "goClientTest",
+		Method:  "listunspent",
+		Params:  []interface{}{},
+	}
+	if address != "" {
+		reqBody.Params = []interface{}{0, 9999999, []string{address}}
+	}
+	rpcResp, err := sendRPCRequest(reqBody, walletURL)
+	if err != nil {
+		return nil, err
+	}
+	if rpcResp.Error != nil {
+		return nil, fmt.Errorf("rpc error: %v", rpcResp.Error)
+	}
+	unspent, ok := rpcResp.Result.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("unexpected result type: %T", rpcResp.Result)
+	}
+	return unspent, nil
+}
+
+func dumpPrivKey(address string) (string, error) {
+	if err := walletPassphrase(); err != nil {
+		return "", err
+	}
+
+	reqBody := RPCRequest{
+		JSONRPC: "1.0",
+		ID:      "goClientTest",
+		Method:  "dumpprivkey",
+		Params:  []interface{}{address},
+	}
+	rpcResp, err := sendRPCRequest(reqBody, walletURL)
+	if err != nil {
+		return "", err
+	}
+	if rpcResp.Error != nil {
+		return "", fmt.Errorf("rpc error: %v", rpcResp.Error)
+	}
+	key, ok := rpcResp.Result.(string)
+	if !ok {
+		return "", fmt.Errorf("unexpected result type: %T", rpcResp.Result)
+	}
+	return key, nil
+}
+
+func walletPassphrase() error {
+	passphrase := "admin"
+	timeout := 10
+	reqBody := RPCRequest{
+		JSONRPC: "1.0",
+		ID:      "goClientTest",
+		Method:  "walletpassphrase",
+		Params:  []interface{}{passphrase, timeout},
+	}
+	rpcResp, err := sendRPCRequest(reqBody, walletURL)
+	if err != nil {
+		return err
+	}
+	if rpcResp.Error != nil {
+		return fmt.Errorf("rpc error: %v", rpcResp.Error)
+	}
+	return nil
+}
+
 // sendRPCRequest sends a JSON-RPC request to your wallet node.
 func sendRPCRequest(reqBody RPCRequest, host hostURL) (RPCResponse, error) {
 	reqBytes, err := json.Marshal(reqBody)
@@ -434,6 +502,34 @@ func main() {
 		}
 		fmt.Printf("Block Details for block %s:\n%s\n", blockHash, b)
 
+	case "listunspent":
+		// address input (optional)
+		address := ""
+		if len(os.Args) >= 3 {
+			address = os.Args[2]
+		}
+		unspent, err := listUnspent(address)
+		if err != nil {
+			panic(err)
+		}
+		b, err := json.Marshal(unspent)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("Unspent Transactions:\n%s\n", b)
+
+	case "dumpprivkey":
+		if len(os.Args) < 3 {
+			panic("Usage: go run main.go dumpprivkey <address>")
+		}
+		address := os.Args[2]
+
+		key, err := dumpPrivKey(address)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("Private key for address: %s\n", key)
+
 	default:
 		fmt.Println("Invalid command. Please use one of the following:")
 		fmt.Println("getaddressesbyaccount <account>")
@@ -442,5 +538,8 @@ func main() {
 		fmt.Println("send <destination> [amount]")
 		fmt.Println("getrawtx <txid>")
 		fmt.Println("gettx <txid>")
+		fmt.Println("getblock <blockhash>")
+		fmt.Println("listunspent [address]")
+		fmt.Println("dumpprivkey <address>")
 	}
 }

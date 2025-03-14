@@ -97,7 +97,7 @@ Go to [Bitcoin Testnet4 Faucet](https://coinfaucet.eu/en/btc-testnet4/) and past
 
 #### Install BoltDB Package
 ```sh
-go get github.com/br0xen/boltbrowser
+go install github.com/br0xen/boltbrowser
 ```
 
 #### Run BoltDB Browser

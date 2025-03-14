@@ -19,9 +19,9 @@ This example connects to the `btcwallet` project. Unfortunately, not all APIs ar
 
 ### Setting Up the Environment
 
-#### Install `bitcoind`
+#### Install `bitcoin`
 ```sh
-brew install bitcoind
+brew install bitcoin
 ```
 
 #### Run `bitcoind`
@@ -97,7 +97,7 @@ Go to [Bitcoin Testnet4 Faucet](https://coinfaucet.eu/en/btc-testnet4/) and past
 
 #### Install BoltDB Package
 ```sh
-go get github.com/br0xen/boltbrowser
+go install github.com/br0xen/boltbrowser
 ```
 
 #### Run BoltDB Browser

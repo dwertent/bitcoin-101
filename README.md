@@ -19,9 +19,9 @@ This example connects to the `btcwallet` project. Unfortunately, not all APIs ar
 
 ### Setting Up the Environment
 
-#### Install `bitcoind`
+#### Install `bitcoin`
 ```sh
-brew install bitcoind
+brew install bitcoin
 ```
 
 #### Run `bitcoind`

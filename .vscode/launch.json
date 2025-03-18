@@ -33,5 +33,19 @@
                 "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
             ]
         },
+        {
+            "name": "poc-indexing",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/poc-indexing",
+        },
+        {
+            "name": "poc-transaction",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/poc-transaction",
+        }
     ]
 }
